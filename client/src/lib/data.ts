@@ -66,8 +66,8 @@ export const ordersOverview = [
 export const projectsData: ProjectData[] = [
   {
     id: "1",
-    name: "Material XD Version",
-    company: "Material XD Version",
+    name: "Ventas",
+    company: "Ventas",
     icon: "palette",
     iconColor: "bg-gray-900 text-white",
     members: [
@@ -221,7 +221,7 @@ export const notificationsData: NotificationData[] = [
     id: "1",
     type: "info",
     title: "New project assigned",
-    message: "You have been assigned to the Material XD Version project",
+    message: "You have been assigned to the Ventas project",
     time: "2 min ago",
     isRead: false
   },

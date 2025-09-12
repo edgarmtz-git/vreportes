@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Endpoint de Pagos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-left: 4px solid #dc3545;
+            background-color: #f8d7da;
+        }
+        .info {
+            border-left: 4px solid #17a2b8;
+            background-color: #d1ecf1;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test del Endpoint de Pagos Diarios</h1>
+    
+    <div class="test-section">
+        <h2>📊 Información del Sistema</h2>
+        <p><strong>Backend:</strong> http://localhost:3001</p>
+        <p><strong>Frontend:</strong> http://localhost:5173</p>
+        <p><strong>Endpoint:</strong> /api/reports/daily-payments</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Pruebas del Endpoint</h2>
+        
+        <div>
+            <h3>1. Configuración de Odoo</h3>
+            <button class="btn" onclick="testOdooConfig()">Probar Configuración</button>
+            <div id="config-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div>
+            <h3>2. Informe de Pagos (Últimos 30 días)</h3>
+            <button class="btn" onclick="testPaymentReport()">Generar Informe</button>
+            <div id="payment-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div>
+            <h3>3. Informe con Filtro REP No Generado</h3>
+            <button class="btn" onclick="testPaymentReportFiltered()">Filtrar REP No Generado</button>
+            <div id="filtered-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Instrucciones</h2>
+        <ol>
+            <li>Haz clic en "Probar Configuración" para verificar la conexión con Odoo</li>
+            <li>Haz clic en "Generar Informe" para obtener datos de pagos de los últimos 30 días</li>
+            <li>Haz clic en "Filtrar REP No Generado" para ver solo pagos pendientes</li>
+            <li>Revisa los resultados en las cajas de texto</li>
+        </ol>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001';
+        
+        function showResult(elementId, data, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testOdooConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/api/odoo-config`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('config-result', data, 'success');
+                } else {
+                    showResult('config-result', data, 'error');
+                }
+            } catch (error) {
+                showResult('config-result', { error: error.message }, 'error');
+            }
+        }
+
+        async function testPaymentReport() {
+            try {
+                const dateTo = new Date().toISOString().split('T')[0];
+                const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                
+                const response = await fetch(`${API_BASE}/api/reports/daily-payments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        dateFrom,
+                        dateTo
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('payment-result', data, 'success');
+                } else {
+                    showResult('payment-result', data, 'error');
+                }
+            } catch (error) {
+                showResult('payment-result', { error: error.message }, 'error');
+            }
+        }
+
+        async function testPaymentReportFiltered() {
+            try {
+                const dateTo = new Date().toISOString().split('T')[0];
+                const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                
+                const response = await fetch(`${API_BASE}/api/reports/daily-payments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        dateFrom,
+                        dateTo,
+                        estadoRep: 'pago_no_enviado'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('filtered-result', data, 'success');
+                } else {
+                    showResult('filtered-result', data, 'error');
+                }
+            } catch (error) {
+                showResult('filtered-result', { error: error.message }, 'error');
+            }
+        }
+
+        // Auto-test al cargar la página
+        window.addEventListener('load', () => {
+            console.log('🧪 Página de pruebas cargada');
+            console.log('📊 Backend URL:', API_BASE);
+        });
+    </script>
+</body>
+</html>

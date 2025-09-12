@@ -12,8 +12,7 @@ import {
   Bar, 
   XAxis, 
   YAxis, 
-  CartesianGrid, 
-  ResponsiveContainer 
+  CartesianGrid
 } from "recharts";
 
 // Sample data for different chart types
@@ -108,8 +107,7 @@ export function ChartsShowcase() {
         </CardHeader>
         <CardContent>
           <ChartContainer config={areaChartConfig} className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={areaChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={areaChartData} width={533} height={300} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
@@ -152,7 +150,6 @@ export function ChartsShowcase() {
                 />
                 <ChartLegend content={<ChartLegendContent />} />
               </AreaChart>
-            </ResponsiveContainer>
           </ChartContainer>
         </CardContent>
       </Card>
@@ -165,8 +162,7 @@ export function ChartsShowcase() {
         </CardHeader>
         <CardContent>
           <ChartContainer config={lineChartConfig} className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={lineChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <LineChart data={lineChartData} width={533} height={300} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="day" 
@@ -198,7 +194,6 @@ export function ChartsShowcase() {
                 />
                 <ChartLegend content={<ChartLegendContent />} />
               </LineChart>
-            </ResponsiveContainer>
           </ChartContainer>
         </CardContent>
       </Card>
@@ -211,8 +206,7 @@ export function ChartsShowcase() {
         </CardHeader>
         <CardContent>
           <ChartContainer config={pieChartConfig} className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+            <PieChart width={533} height={300}>
                 <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                 <Pie
                   data={pieChartData}
@@ -229,7 +223,6 @@ export function ChartsShowcase() {
                 </Pie>
                 <ChartLegend content={<ChartLegendContent />} />
               </PieChart>
-            </ResponsiveContainer>
           </ChartContainer>
         </CardContent>
       </Card>
@@ -242,8 +235,7 @@ export function ChartsShowcase() {
         </CardHeader>
         <CardContent>
           <ChartContainer config={barChartConfig} className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <BarChart data={barChartData} width={533} height={300} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="category" 
@@ -272,7 +264,6 @@ export function ChartsShowcase() {
                 />
                 <ChartLegend content={<ChartLegendContent />} />
               </BarChart>
-            </ResponsiveContainer>
           </ChartContainer>
         </CardContent>
       </Card>

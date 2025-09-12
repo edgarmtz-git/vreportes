@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Routing - Material Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-link {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .test-link:hover {
+            background-color: #0056b3;
+        }
+        .info {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .status {
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Routing - Material Dashboard</h1>
+    
+    <div class="info">
+        <h3>📋 Estado del Sistema</h3>
+        <p><span class="status">✅ Backend:</span> http://localhost:3001</p>
+        <p><span class="status">✅ Frontend:</span> http://localhost:5173</p>
+        <p><span class="status">✅ Proxy:</span> Configurado correctamente</p>
+    </div>
+
+    <h2>🔗 Enlaces de Prueba</h2>
+    
+    <h3>Área Pública (No requiere autenticación)</h3>
+    <a href="http://localhost:5173/auth/sign-in" class="test-link">🔐 Página de Login</a>
+    <a href="http://localhost:5173/auth/sign-up" class="test-link">📝 Registro</a>
+    
+    <h3>Área Privada (Requiere autenticación - redirigirá al login)</h3>
+    <a href="http://localhost:5173/" class="test-link">🏠 Dashboard</a>
+    <a href="http://localhost:5173/capacitaciones" class="test-link">🎓 Capacitaciones</a>
+    <a href="http://localhost:5173/servicios-industriales" class="test-link">⚙️ Servicios Industriales</a>
+    <a href="http://localhost:5173/test-odoo" class="test-link">🔧 Test Odoo</a>
+    <a href="http://localhost:5173/profile" class="test-link">👤 Perfil</a>
+    
+    <div class="info">
+        <h3>🔑 Credenciales de Prueba</h3>
+        <p><strong>Usuario:</strong> soporte.tecnico@varcus.com.mx</p>
+        <p><strong>Contraseña:</strong> z14K7uN1</p>
+    </div>
+
+    <div class="info">
+        <h3>📝 Instrucciones</h3>
+        <ol>
+            <li>Haz clic en "Página de Login" para ir al formulario de autenticación</li>
+            <li>Usa las credenciales de prueba para iniciar sesión</li>
+            <li>Después del login exitoso, serás redirigido al dashboard</li>
+            <li>Prueba navegar a otras páginas protegidas</li>
+            <li>Si intentas acceder a una página protegida sin autenticación, serás redirigido al login</li>
+        </ol>
+    </div>
+</body>
+</html>

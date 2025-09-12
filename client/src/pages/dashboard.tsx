@@ -1,47 +1,25 @@
-import { StatsGrid } from "@/components/dashboard/stats-grid";
-import { ProjectsTable } from "@/components/dashboard/projects-table";
-import { ChartsShowcase } from "@/components/dashboard/charts-showcase";
+import InvoiceDashboard from "@/components/dashboard/invoice-dashboard";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import peopleBackground from "/images/material-persons.jpg";
 
 export default function Dashboard() {
   return (
     <div className="h-full overflow-y-auto p-6 custom-scrollbar">
-      {/* Hero Card with Background Image */}
-      <Card className="relative mb-8 border border-stone-200 bg-white overflow-hidden">
-        <div
-          className="relative h-64 bg-cover bg-top bg-no-repeat"
-          style={{ backgroundImage: `url(${peopleBackground})` }}
-        >
-          {/* Dark overlay for better text readability */}
-          <div className="absolute inset-0"></div>
-
-          {/* Content */}
-          <div className="relative z-10 p-8 flex items-center h-full">
-            <div className="max-w-lg">
-              <h2 className="text-3xl font-bold text-white mb-4">
-                Build Amazing Teams
-              </h2>
-              <p className="text-stone-200 text-lg mb-6 leading-relaxed">
-                Connect with diverse talent and create inclusive workspaces that
-                drive innovation. Discover how our platform helps you build
-                stronger teams.
-              </p>
-              <Button
-                size="lg"
-                className="px-6 py-3 shadow-sm hover:shadow-md bg-stone-800 hover:bg-stone-700 relative bg-gradient-to-b from-stone-700 to-stone-800 border border-stone-900 text-stone-50 hover:bg-gradient-to-b hover:from-stone-800 hover:to-stone-800 hover:border-stone-900 after:absolute after:inset-0 after:rounded-[inherit] after:box-shadow after:shadow-[inset_0_1px_0px_rgba(255,255,255,0.25),inset_0_-2px_0px_rgba(0,0,0,0.35)] after:pointer-events-none duration-300 ease-in align-middle select-none font-sans text-center antialiased"
-              >
-                Get Started
-              </Button>
-            </div>
-          </div>
+      {/* Información del dashboard */}
+      <Card className="border-gray-200 mb-6">
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Dashboard de Facturación
+          </h2>
+          <p className="text-gray-600">
+            Visualiza el estado de tus facturas, pagos pendientes y estadísticas de ventas. 
+            Utiliza los filtros de fecha para analizar períodos específicos y obtener insights 
+            sobre el comportamiento de tus clientes y el flujo de efectivo.
+          </p>
         </div>
       </Card>
 
-      <StatsGrid />
-      <ProjectsTable />
-      <ChartsShowcase />
+      {/* Componente principal del dashboard */}
+      <InvoiceDashboard />
     </div>
   );
 }

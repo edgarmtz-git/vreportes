@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,9 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Footer } from "@/components/layout/footer";
 import { ThemeConfigurator } from "@/components/theme-configurator";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import Dashboard from "@/pages/dashboard";
+import Capacitaciones from "@/pages/capacitaciones";
+import ServiciosIndustriales from "@/pages/servicios-industriales";
+import TestOdoo from "@/pages/test-odoo";
+import PaymentReport from "@/pages/payment-report";
 import Profile from "@/pages/profile";
 import Tables from "@/pages/tables";
 import Notifications from "@/pages/notifications";
@@ -84,9 +89,39 @@ function Router() {
   return (
     <Routes>
       <Route path="/" element={
-        <Layout>
-          <Dashboard />
-        </Layout>
+        <ProtectedRoute>
+          <Layout>
+            <Dashboard />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/capacitaciones" element={
+        <ProtectedRoute>
+          <Layout title="Capacitaciones" description="Gestiona y supervisa las capacitaciones del equipo">
+            <Capacitaciones />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/servicios-industriales" element={
+        <ProtectedRoute>
+          <Layout title="Servicios Industriales" description="Gestiona servicios técnicos, mantenimiento y proyectos industriales">
+            <ServiciosIndustriales />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/test-odoo" element={
+        <ProtectedRoute>
+          <Layout title="Prueba de Conexión Odoo" description="Verifica la conectividad y autenticación con la API de Odoo">
+            <TestOdoo />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/payment-report" element={
+        <ProtectedRoute>
+          <Layout title="Informe de Pagos Diarios" description="Análisis de ingresos diarios con estado de REP para ventas">
+            <PaymentReport />
+          </Layout>
+        </ProtectedRoute>
       } />
       <Route path="/profile" element={
         <Layout title="Profile" description="Manage your account settings and personal information">
@@ -122,14 +157,12 @@ function Router() {
 
 function App() {
   return (
-    <HashRouter>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </HashRouter>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 
