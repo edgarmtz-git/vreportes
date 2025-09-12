@@ -6,13 +6,10 @@ import {
   Table, 
   Bell,
   CreditCard,
-  BookOpen,
   GraduationCap,
   Cog,
-  TestTube,
   TrendingUp,
   LogIn, 
-  UserPlus,
   LogOut,
   X,
   ChevronDown,
@@ -25,13 +22,13 @@ import { useState } from "react";
 const navItems = [
   {
     title: "Ventas",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutDashboard,
     hasSubmenu: true,
     submenu: [
       {
         title: "Facturación",
-        href: "/",
+        href: "/dashboard",
         icon: LayoutDashboard,
       },
       {
@@ -50,11 +47,6 @@ const navItems = [
     title: "Servicios Industriales",
     href: "/servicios-industriales",
     icon: Cog,
-  },
-  {
-    title: "Prueba Odoo",
-    href: "/test-odoo",
-    icon: TestTube,
   },
   // Hidden menus - available for future use
   // {
@@ -84,11 +76,6 @@ const authItems = [
     title: "Sign In",
     href: "/auth/sign-in",
     icon: LogIn,
-  },
-  {
-    title: "Sign Up",
-    href: "/auth/sign-up",
-    icon: UserPlus,
   },
 ];
 
@@ -206,35 +193,36 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           );
         })}
 
-        {/* Auth Section */}
-        <div className="pt-4 border-t border-stone-200 mt-4">
-          <p className="px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">
-            AUTH PAGES
-          </p>
-          {authItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
-            
-            return (
-              <NavLink key={item.href} to={item.href}>
-                <div
-                  className={cn(
-                    "flex items-center text-sm font-normal rounded-lg cursor-pointer",
-                    isActive
-                      ? "px-3 py-2 shadow-sm hover:shadow-md bg-stone-800 hover:bg-stone-700 relative bg-gradient-to-b from-stone-700 to-stone-800 border border-stone-900 text-stone-50 hover:bg-gradient-to-b hover:from-stone-800 hover:to-stone-800 hover:border-stone-900 after:absolute after:inset-0 after:rounded-[inherit] after:box-shadow after:shadow-[inset_0_1px_0px_rgba(255,255,255,0.25),inset_0_-2px_0px_rgba(0,0,0,0.35)] after:pointer-events-none duration-300 ease-in align-middle select-none font-sans text-center antialiased"
-                      : "px-3 py-2 text-stone-700 hover:bg-stone-100 transition-colors duration-200 border border-transparent"
-                  )}
-                >
-                  <Icon className="mr-3 w-4 h-4" />
-                  {item.title}
-                </div>
-              </NavLink>
-            );
-          })}
-        </div>
-
-        {/* User Info and Logout */}
-        {user && (
+        {/* Authentication Section - Conditional based on user state */}
+        {!user ? (
+          /* Show Sign In when not authenticated */
+          <div className="pt-4 border-t border-stone-200 mt-4">
+            <p className="px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">
+              AUTH PAGES
+            </p>
+            {authItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
+              
+              return (
+                <NavLink key={item.href} to={item.href}>
+                  <div
+                    className={cn(
+                      "flex items-center text-sm font-normal rounded-lg cursor-pointer",
+                      isActive
+                        ? "px-3 py-2 shadow-sm hover:shadow-md bg-stone-800 hover:bg-stone-700 relative bg-gradient-to-b from-stone-700 to-stone-800 border border-stone-900 text-stone-50 hover:bg-gradient-to-b hover:from-stone-800 hover:to-stone-800 hover:border-stone-900 after:absolute after:inset-0 after:rounded-[inherit] after:box-shadow after:shadow-[inset_0_1px_0px_rgba(255,255,255,0.25),inset_0_-2px_0px_rgba(0,0,0,0.35)] after:pointer-events-none duration-300 ease-in align-middle select-none font-sans text-center antialiased"
+                        : "px-3 py-2 text-stone-700 hover:bg-stone-100 transition-colors duration-200 border border-transparent"
+                    )}
+                  >
+                    <Icon className="mr-3 w-4 h-4" />
+                    {item.title}
+                  </div>
+                </NavLink>
+              );
+            })}
+          </div>
+        ) : (
+          /* Show User Info and Logout when authenticated */
           <div className="mt-auto pt-4 border-t border-stone-200">
             <div className="px-4 py-3 mb-2">
               <div className="text-xs text-stone-500 uppercase tracking-wide mb-1">
@@ -259,22 +247,6 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           </div>
         )}
 
-        {/* Documentation Link */}
-        <div className="pt-4 border-t border-stone-200">
-          <NavLink to="/documentation">
-            <div
-              className={cn(
-                "flex items-center text-sm font-normal rounded-lg cursor-pointer",
-                location.pathname === "/documentation"
-                  ? "px-3 py-2 shadow-sm hover:shadow-md bg-stone-800 hover:bg-stone-700 relative bg-gradient-to-b from-stone-700 to-stone-800 border border-stone-900 text-stone-50 hover:bg-gradient-to-b hover:from-stone-800 hover:to-stone-800 hover:border-stone-900 after:absolute after:inset-0 after:rounded-[inherit] after:box-shadow after:shadow-[inset_0_1px_0px_rgba(255,255,255,0.25),inset_0_-2px_0px_rgba(0,0,0,0.35)] after:pointer-events-none duration-300 ease-in align-middle select-none font-sans text-center antialiased"
-                  : "px-3 py-2 text-stone-700 hover:bg-stone-100 transition-colors duration-200"
-              )}
-            >
-              <BookOpen className="mr-3 w-4 h-4" />
-              Documentation
-            </div>
-          </NavLink>
-        </div>
       </nav>
 
     </aside>

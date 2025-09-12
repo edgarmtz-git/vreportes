@@ -116,6 +116,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🚪 Logout - Cerrar sesión
+  app.post('/api/auth/logout', async (req, res) => {
+    try {
+      console.log(`🚪 Cerrando sesión...`);
+      
+      // Limpiar la sesión global de Odoo
+      await OdooService.clearSession();
+      
+      console.log(`✅ Sesión cerrada exitosamente`);
+      
+      res.json({
+        success: true,
+        message: 'Sesión cerrada exitosamente',
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('💥 Error al cerrar sesión:', error);
+      res.status(500).json({
+        success: false,
+        message: `Error al cerrar sesión: ${error}`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
   // 📊 Informe de pagos diarios para ventas
   app.post('/api/reports/daily-payments', async (req, res) => {
     try {

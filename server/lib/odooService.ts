@@ -78,6 +78,21 @@ export class OdooService {
   }
 
   /**
+   * Limpiar la sesión actual
+   */
+  public static async clearSession(): Promise<void> {
+    console.log('🧹 Limpiando sesión de Odoo...');
+    
+    // Limpiar variables de sesión
+    this.currentUser = null;
+    this.sessionCookies = [];
+    this.globalCookieJar = [];
+    this.isRenewingSession = false;
+    
+    console.log('✅ Sesión limpiada exitosamente');
+  }
+
+  /**
    * Asegurar que tenemos una sesión válida
    */
   private static async ensureAuthenticated(): Promise<OdooAuthResult> {
@@ -147,9 +162,9 @@ export class OdooService {
     }
     
     this.currentUser = authData.result;
-    console.log(`✅ Autenticación exitosa. UID: ${this.currentUser.uid}`);
+    console.log(`✅ Autenticación exitosa. UID: ${this.currentUser?.uid}`);
     
-    return this.currentUser;
+    return this.currentUser!;
   }
 
   /**

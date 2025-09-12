@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
   uid: number;
@@ -21,12 +22,42 @@ interface AuthState {
 }
 
 export function useAuth() {
+  const navigate = useNavigate();
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
     isLoading: false,
     error: null,
   });
+
+  const checkAuth = useCallback(() => {
+    const user = localStorage.getItem('user');
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+
+    if (user && isAuthenticated) {
+      try {
+        const parsedUser = JSON.parse(user);
+        setAuthState({
+          user: parsedUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+        return true;
+      } catch (error) {
+        // Si hay error al parsear, limpiar localStorage
+        localStorage.removeItem('user');
+        localStorage.removeItem('isAuthenticated');
+      }
+    }
+
+    return false;
+  }, []);
+
+  // Inicializar estado de autenticación al montar el componente
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const login = useCallback(async (email: string, password: string) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -76,7 +107,21 @@ export function useAuth() {
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      // Llamar al endpoint de logout del servidor
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.error('Error al cerrar sesión en el servidor:', error);
+      // Continuar con el logout local aunque falle el servidor
+    }
+
+    // Limpiar datos locales
     localStorage.removeItem('user');
     localStorage.removeItem('isAuthenticated');
     setAuthState({
@@ -85,31 +130,10 @@ export function useAuth() {
       isLoading: false,
       error: null,
     });
-  }, []);
 
-  const checkAuth = useCallback(() => {
-    const user = localStorage.getItem('user');
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-
-    if (user && isAuthenticated) {
-      try {
-        const parsedUser = JSON.parse(user);
-        setAuthState({
-          user: parsedUser,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null,
-        });
-        return true;
-      } catch (error) {
-        // Si hay error al parsear, limpiar localStorage
-        localStorage.removeItem('user');
-        localStorage.removeItem('isAuthenticated');
-      }
-    }
-
-    return false;
-  }, []);
+    // Redirigir al login después del logout
+    navigate('/');
+  }, [navigate]);
 
   return {
     ...authState,

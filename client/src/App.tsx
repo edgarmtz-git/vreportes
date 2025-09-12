@@ -14,15 +14,12 @@ import { useState } from "react";
 import Dashboard from "@/pages/dashboard";
 import Capacitaciones from "@/pages/capacitaciones";
 import ServiciosIndustriales from "@/pages/servicios-industriales";
-import TestOdoo from "@/pages/test-odoo";
 import PaymentReport from "@/pages/payment-report";
 import Profile from "@/pages/profile";
 import Tables from "@/pages/tables";
 import Notifications from "@/pages/notifications";
 import Subscriptions from "@/pages/subscriptions";
-import Documentation from "@/pages/documentation";
 import SignIn from "@/pages/auth/sign-in";
-import SignUp from "@/pages/auth/sign-up";
 import NotFound from "@/pages/not-found";
 
 function Layout({ children, title, description }: { children: React.ReactNode; title?: string; description?: string }) {
@@ -88,7 +85,11 @@ function Layout({ children, title, description }: { children: React.ReactNode; t
 function Router() {
   return (
     <Routes>
-      <Route path="/" element={
+      {/* Ruta principal - redirige al login si no está autenticado, al dashboard si está autenticado */}
+      <Route path="/" element={<SignIn />} />
+      
+      {/* Rutas del dashboard - todas protegidas */}
+      <Route path="/dashboard" element={
         <ProtectedRoute>
           <Layout>
             <Dashboard />
@@ -109,13 +110,6 @@ function Router() {
           </Layout>
         </ProtectedRoute>
       } />
-      <Route path="/test-odoo" element={
-        <ProtectedRoute>
-          <Layout title="Prueba de Conexión Odoo" description="Verifica la conectividad y autenticación con la API de Odoo">
-            <TestOdoo />
-          </Layout>
-        </ProtectedRoute>
-      } />
       <Route path="/payment-report" element={
         <ProtectedRoute>
           <Layout title="Informe de Pagos Diarios" description="Análisis de ingresos diarios con estado de REP para ventas">
@@ -124,32 +118,38 @@ function Router() {
         </ProtectedRoute>
       } />
       <Route path="/profile" element={
-        <Layout title="Profile" description="Manage your account settings and personal information">
-          <Profile />
-        </Layout>
+        <ProtectedRoute>
+          <Layout title="Profile" description="Manage your account settings and personal information">
+            <Profile />
+          </Layout>
+        </ProtectedRoute>
       } />
       <Route path="/tables" element={
-        <Layout title="Tables" description="Browse and manage data across different views">
-          <Tables />
-        </Layout>
+        <ProtectedRoute>
+          <Layout title="Tables" description="Browse and manage data across different views">
+            <Tables />
+          </Layout>
+        </ProtectedRoute>
       } />
       <Route path="/notifications" element={
-        <Layout title="Notifications" description="Stay updated with your latest alerts and messages">
-          <Notifications />
-        </Layout>
+        <ProtectedRoute>
+          <Layout title="Notifications" description="Stay updated with your latest alerts and messages">
+            <Notifications />
+          </Layout>
+        </ProtectedRoute>
       } />
       <Route path="/subscriptions" element={
-        <Layout title="Subscriptions" description="Manage your billing, plans, and subscription settings">
-          <Subscriptions />
-        </Layout>
+        <ProtectedRoute>
+          <Layout title="Subscriptions" description="Manage your billing, plans, and subscription settings">
+            <Subscriptions />
+          </Layout>
+        </ProtectedRoute>
       } />
-      <Route path="/documentation" element={
-        <Layout title="Documentation" description="Installation guide, component examples, and project information">
-          <Documentation />
-        </Layout>
-      } />
+      
+      {/* Ruta de login explícita */}
       <Route path="/auth/sign-in" element={<SignIn />} />
-      <Route path="/auth/sign-up" element={<SignUp />} />
+      
+      {/* Página 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

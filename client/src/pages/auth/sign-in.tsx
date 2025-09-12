@@ -23,7 +23,7 @@ export default function SignIn() {
   // Redirigir si ya está autenticado
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
@@ -35,7 +35,7 @@ export default function SignIn() {
     if (result.success) {
       setShowSuccess(true);
       setTimeout(() => {
-        navigate('/');
+        navigate('/dashboard');
       }, 1500);
     }
   };

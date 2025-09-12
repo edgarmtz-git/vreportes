@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { InvoiceComparison } from "./invoice-comparison";
+import { TopPerformers } from "./top-performers";
 import { 
   FileText, 
   CheckCircle, 
@@ -15,7 +17,8 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  TrendingUp
 } from "lucide-react";
 
 interface InvoiceData {
@@ -423,6 +426,41 @@ export default function InvoiceDashboard() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Comparación de Facturas Pagadas vs No Pagadas */}
+      {stats && (
+        <Card className="border-gray-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Análisis de Facturas y Margen
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <InvoiceComparison 
+              invoices={stats.invoices}
+              totalAmount={stats.totalAmount}
+              paidAmount={stats.paidAmount}
+              unpaidAmount={stats.unpaidAmount}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Top Performers */}
+      {stats && (
+        <Card className="border-gray-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Top Performers - Clientes y Vendedores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TopPerformers invoices={stats.invoices} />
+          </CardContent>
+        </Card>
       )}
 
       {/* Tabla de Facturas */}

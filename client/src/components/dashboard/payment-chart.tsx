@@ -446,10 +446,10 @@ export function PaymentChart({ onDataLoad }: PaymentChartProps) {
                       <Line 
                         type="monotone" 
                         dataKey="amountGenerado" 
-                        stroke="#059669" 
+                        stroke="#2563eb" 
                         strokeWidth={2}
                         name="REP Generado"
-                        dot={{ fill: '#059669', strokeWidth: 2, r: 3 }}
+                        dot={{ fill: '#2563eb', strokeWidth: 2, r: 3 }}
                       />
                       <Line 
                         type="monotone" 
@@ -482,7 +482,7 @@ export function PaymentChart({ onDataLoad }: PaymentChartProps) {
                         labelFormatter={(label) => `Fecha: ${label}`}
                       />
                       <Legend />
-                      <Bar dataKey="amountGenerado" fill="#059669" name="REP Generado" />
+                      <Bar dataKey="amountGenerado" fill="#2563eb" name="REP Generado" />
                       <Bar dataKey="amountNoGenerado" fill="#f59e0b" name="REP No Generado" />
                     </BarChart>
                   )}
@@ -512,7 +512,7 @@ export function PaymentChart({ onDataLoad }: PaymentChartProps) {
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">{formatCurrency(journal.totalAmount)}</p>
                       <div className="flex gap-2 text-xs">
-                        <span className="text-green-600">
+                        <span className="text-blue-600">
                           {journal.repGenerado} REP ✓
                         </span>
                         {journal.repNoGenerado > 0 && (

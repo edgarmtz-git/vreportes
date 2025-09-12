@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "dist/public/index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "dist/public/assets/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "dist/public/images/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "dist/public/favicon.ico",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "dist/public/clear-sw.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/auth/login.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/auth/logout.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/auth/login",
+      "dest": "/api/auth/login.js"
+    },
+    {
+      "src": "/api/auth/logout",
+      "dest": "/api/auth/logout.js"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/dist/public/assets/$1"
+    },
+    {
+      "src": "/images/(.*)",
+      "dest": "/dist/public/images/$1"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/dist/public/favicon.ico"
+    },
+    {
+      "src": "/clear-sw.js",
+      "dest": "/dist/public/clear-sw.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/dist/public/index.html"
+    }
+  ]
+}

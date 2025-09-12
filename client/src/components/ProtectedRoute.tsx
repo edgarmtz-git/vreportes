@@ -17,7 +17,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     setIsChecking(false);
     
     if (!hasAuth) {
-      navigate('/auth/sign-in');
+      navigate('/');
     }
   }, [navigate]); // Removed checkAuth from dependencies to prevent infinite loop
 
