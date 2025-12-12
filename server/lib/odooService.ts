@@ -172,42 +172,113 @@ export class OdooService {
    */
   static async authenticate(login: string, password: string): Promise<OdooAuthResult> {
     try {
-      const response = await fetch(`${this.ODOO_URL}/web/session/authenticate`, {
+      const authUrl = `${this.ODOO_URL}/web/session/authenticate`;
+      const requestBody = {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          db: this.ODOO_DB,
+          login: login,
+          password: password,
+        },
+        id: Math.floor(Math.random() * 1000000),
+      };
+
+      console.log(`📡 Enviando solicitud de autenticación a: ${authUrl}`);
+      console.log(`📋 Parámetros:`, {
+        db: this.ODOO_DB,
+        login: login,
+        password: '***' // No mostrar contraseña en logs
+      });
+
+      const response = await fetch(authUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'call',
-          params: {
-            db: this.ODOO_DB,
-            login: login,
-            password: password,
-          },
-          id: Math.floor(Math.random() * 1000000),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log(`📥 Respuesta HTTP: ${response.status} ${response.statusText}`);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`❌ Error HTTP:`, errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        const textResponse = await response.text();
+        console.error(`❌ Error al parsear respuesta JSON:`, textResponse);
+        throw new Error(`Respuesta inválida del servidor Odoo: ${textResponse.substring(0, 200)}`);
+      }
+
+      // Log completo de la respuesta para debugging (solo en desarrollo)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`📋 Respuesta completa de Odoo:`, JSON.stringify(data, null, 2));
+      }
 
       // Verificar si hay error en la respuesta
       if (data.error) {
-        throw new Error(`Odoo error: ${data.error.message}`);
+        console.error(`❌ Error de Odoo completo:`, JSON.stringify(data.error, null, 2));
+        const errorMessage = data.error.message || 'Error desconocido de Odoo';
+        const errorCode = data.error.code || 'UNKNOWN';
+        const errorData = data.error.data || {};
+        
+        // Log detallado del error
+        console.error(`   - Código: ${errorCode}`);
+        console.error(`   - Mensaje: ${errorMessage}`);
+        if (errorData.debug) {
+          console.error(`   - Debug: ${errorData.debug}`);
+        }
+        if (errorData.name) {
+          console.error(`   - Tipo de error: ${errorData.name}`);
+        }
+        if (errorData.message) {
+          console.error(`   - Mensaje detallado: ${errorData.message}`);
+        }
+        if (errorData.arguments && errorData.arguments.length > 0) {
+          console.error(`   - Argumentos:`, errorData.arguments);
+        }
+        
+        // Mensajes más específicos según el código de error
+        if (errorCode === 200 || errorMessage.includes('Wrong login/password') || errorMessage.includes('Invalid credentials')) {
+          throw new Error('Credenciales inválidas. Verifica tu usuario y contraseña.');
+        } else if (errorMessage.includes('Database') || errorMessage.includes('database') || errorData.name === 'odoo.exceptions.AccessDenied') {
+          throw new Error(`Error con la base de datos "${this.ODOO_DB}". Verifica que el nombre sea correcto y que el usuario tenga acceso.`);
+        } else if (errorData.name === 'odoo.exceptions.AccessDenied') {
+          throw new Error('Acceso denegado. El usuario no tiene permisos para acceder a esta base de datos.');
+        } else if (errorData.name === 'odoo.exceptions.UserError') {
+          throw new Error(`Error de usuario: ${errorData.message || errorMessage}`);
+        } else {
+          // Incluir más información en el error
+          const detailedError = errorData.message || errorMessage;
+          const fullError = errorData.arguments && errorData.arguments.length > 0 
+            ? `${detailedError} - ${errorData.arguments.join(', ')}`
+            : detailedError;
+          throw new Error(`Odoo error: ${fullError} (Code: ${errorCode})`);
+        }
       }
 
       // Verificar si el resultado es válido
       if (!data.result || !data.result.uid) {
+        console.error(`❌ Respuesta inválida:`, data);
         throw new Error('Invalid credentials or user not found');
       }
 
+      console.log(`✅ Autenticación exitosa - UID: ${data.result.uid}, Usuario: ${data.result.name}`);
       return data.result;
     } catch (error) {
-      console.error('Odoo authentication error:', error);
+      console.error('💥 Odoo authentication error:', error);
+      
+      // Mejorar mensajes de error para problemas de red
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(`No se pudo conectar con el servidor Odoo en ${this.ODOO_URL}. Verifica la URL y la conectividad de red.`);
+      }
+      
       throw error;
     }
   }
@@ -623,46 +694,119 @@ export class OdooService {
       
       console.log(`📄 Filtros de búsqueda:`, JSON.stringify(searchFilters, null, 2));
       
-      // Obtener datos de facturas usando la sesión global
-      const queryResponse = await this.makeAuthenticatedRequest(`${this.ODOO_URL}/web/dataset/call_kw`, {
-        jsonrpc: '2.0',
-        method: 'call',
-        params: {
-          model: 'account.move',
-          method: 'search_read',
-          args: [searchFilters],
-          kwargs: {
-            fields: [
-              'id', 'name', 'invoice_date', 'invoice_date_due', 'partner_id',
-              'amount_total', 'amount_residual', 'amount_tax', 'currency_id',
-              'state', 'move_type', 'ref', 'invoice_origin', 'invoice_payment_term_id',
-              'user_id', 'team_id', 'company_id', 'create_date', 'write_date'
-            ],
-            order: 'invoice_date desc',
-            limit: pageSize,
-            offset: offset
+      // Campos base que siempre se solicitan
+      const baseFields = [
+        'id', 'name', 'invoice_date', 'invoice_date_due', 'partner_id',
+        'amount_total', 'amount_residual', 'amount_tax', 'currency_id',
+        'state', 'move_type', 'ref', 'invoice_origin', 'invoice_payment_term_id',
+        'user_id', 'team_id', 'company_id', 'create_date', 'write_date'
+      ];
+      
+      // Intentar primero con el campo methodo_pago
+      let fields = [...baseFields, 'methodo_pago'];
+      let queryResponse;
+      let queryData;
+      let invoices;
+      
+      try {
+        queryResponse = await this.makeAuthenticatedRequest(`${this.ODOO_URL}/web/dataset/call_kw`, {
+          jsonrpc: '2.0',
+          method: 'call',
+          params: {
+            model: 'account.move',
+            method: 'search_read',
+            args: [searchFilters],
+            kwargs: {
+              fields: fields,
+              order: 'invoice_date desc',
+              limit: pageSize,
+              offset: offset
+            },
+            context: {
+              'uid': user.uid,
+              'tz': 'America/Mexico_City',
+              'lang': 'es_MX'
+            }
           },
-          context: {
-            'uid': user.uid,
-            'tz': 'America/Mexico_City',
-            'lang': 'es_MX'
+          id: Math.floor(Math.random() * 1000000),
+        });
+        
+        if (!queryResponse.ok) {
+          throw new Error(`HTTP error! status: ${queryResponse.status}`);
+        }
+        
+        queryData = await queryResponse.json();
+        
+        if (queryData.error) {
+          const errorMessage = queryData.error.message || 'Error desconocido de Odoo';
+          const errorData = queryData.error.data || {};
+          
+          // Si el error es por el campo methodo_pago, intentar sin él
+          if (errorMessage.includes('methodo_pago') || errorMessage.includes('field') || 
+              (errorData.arguments && errorData.arguments.some((arg: any) => 
+                typeof arg === 'string' && arg.includes('methodo_pago')))) {
+            console.warn(`⚠️ El campo 'methodo_pago' no está disponible. Obteniendo datos sin ese campo...`);
+            // Intentar sin el campo methodo_pago
+            fields = baseFields;
+            throw new Error('RETRY_WITHOUT_METHODO_PAGO');
+          } else {
+            throw new Error(`Odoo error: ${errorMessage}`);
           }
-        },
-        id: Math.floor(Math.random() * 1000000),
-      });
-      
-      if (!queryResponse.ok) {
-        throw new Error(`HTTP error! status: ${queryResponse.status}`);
+        }
+        
+        invoices = queryData.result || [];
+      } catch (error: any) {
+        // Si es el error de retry, intentar sin methodo_pago
+        if (error.message === 'RETRY_WITHOUT_METHODO_PAGO') {
+          console.log(`🔄 Reintentando consulta sin el campo 'methodo_pago'...`);
+          queryResponse = await this.makeAuthenticatedRequest(`${this.ODOO_URL}/web/dataset/call_kw`, {
+            jsonrpc: '2.0',
+            method: 'call',
+            params: {
+              model: 'account.move',
+              method: 'search_read',
+              args: [searchFilters],
+              kwargs: {
+                fields: baseFields,
+                order: 'invoice_date desc',
+                limit: pageSize,
+                offset: offset
+              },
+              context: {
+                'uid': user.uid,
+                'tz': 'America/Mexico_City',
+                'lang': 'es_MX'
+              }
+            },
+            id: Math.floor(Math.random() * 1000000),
+          });
+          
+          if (!queryResponse.ok) {
+            throw new Error(`HTTP error! status: ${queryResponse.status}`);
+          }
+          
+          queryData = await queryResponse.json();
+          
+          if (queryData.error) {
+            console.error(`❌ Error completo de Odoo:`, JSON.stringify(queryData.error, null, 2));
+            throw new Error(`Odoo error: ${queryData.error.message || 'Error desconocido'}`);
+          }
+          
+          invoices = queryData.result || [];
+          console.warn(`⚠️ Datos obtenidos sin el campo 'methodo_pago' (campo no disponible en esta versión de Odoo)`);
+        } else {
+          throw error;
+        }
       }
       
-      const queryData = await queryResponse.json();
-      
-      if (queryData.error) {
-        throw new Error(`Odoo error: ${queryData.error.message}`);
-      }
-      
-      const invoices = queryData.result || [];
       console.log(`✅ Datos de facturas obtenidos: ${invoices.length} registros`);
+      
+      // Verificar si el campo methodo_pago está presente en los resultados
+      if (invoices.length > 0 && invoices[0].methodo_pago !== undefined) {
+        console.log(`✅ Campo 'methodo_pago' disponible en los datos`);
+      } else if (invoices.length > 0) {
+        console.log(`ℹ️ Campo 'methodo_pago' no está disponible (se mostrará '-' en la tabla)`);
+      }
       
       // Para evitar problemas con search_count, vamos a usar una aproximación diferente
       // Obtener todos los registros sin paginación para contar, pero limitado a un número razonable
@@ -876,6 +1020,201 @@ export class OdooService {
       };
     } catch (error) {
       console.error('Odoo getPaymentTableData error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener datos de cotizaciones (sale.order) con filtros
+   */
+  static async getQuotationData(filters: {
+    dateFrom: string;
+    dateTo: string;
+    state?: 'draft' | 'sent' | 'sale' | 'done' | 'cancel';
+    page?: number;
+    pageSize?: number;
+  }) {
+    try {
+      console.log(`📋 Obteniendo datos de cotizaciones - Página ${filters.page || 1}, Tamaño ${filters.pageSize || 10}`);
+      
+      // Usar el sistema de autenticación global
+      const user = await this.ensureAuthenticated();
+      
+      const page = filters.page || 1;
+      const pageSize = filters.pageSize || 10;
+      const offset = (page - 1) * pageSize;
+      
+      // Construir filtros de búsqueda
+      const searchFilters = [
+        ['date_order', '>=', filters.dateFrom],
+        ['date_order', '<=', filters.dateTo],
+        ...(filters.state ? [['state', '=', filters.state]] : [])
+      ];
+      
+      console.log(`📋 Filtros de búsqueda de cotizaciones:`, JSON.stringify(searchFilters, null, 2));
+      
+      // Campos base para cotizaciones
+      const baseFields = [
+        'id', 'name', 'date_order', 'partner_id',
+        'amount_total', 'amount_untaxed', 'amount_tax', 'currency_id',
+        'state', 'user_id', 'team_id', 'company_id', 
+        'create_date', 'write_date', 'validity_date', 'commitment_date'
+      ];
+      
+      // Intentar obtener cotizaciones
+      let fields = baseFields;
+      let queryResponse;
+      let queryData;
+      let quotations;
+      
+      try {
+        queryResponse = await this.makeAuthenticatedRequest(`${this.ODOO_URL}/web/dataset/call_kw`, {
+          jsonrpc: '2.0',
+          method: 'call',
+          params: {
+            model: 'sale.order',
+            method: 'search_read',
+            args: [searchFilters],
+            kwargs: {
+              fields: fields,
+              order: 'date_order desc',
+              limit: pageSize,
+              offset: offset
+            },
+            context: {
+              'uid': user.uid,
+              'tz': 'America/Mexico_City',
+              'lang': 'es_MX'
+            }
+          },
+          id: Math.floor(Math.random() * 1000000),
+        });
+        
+        if (!queryResponse.ok) {
+          throw new Error(`HTTP error! status: ${queryResponse.status}`);
+        }
+        
+        queryData = await queryResponse.json();
+        
+        if (queryData.error) {
+          const errorMessage = queryData.error.message || 'Error desconocido de Odoo';
+          const errorData = queryData.error.data || {};
+          
+          console.error(`❌ Error completo de Odoo:`, JSON.stringify(queryData.error, null, 2));
+          throw new Error(`Odoo error: ${errorMessage}`);
+        }
+        
+        quotations = queryData.result || [];
+      } catch (error: any) {
+        console.error('💥 Error obteniendo cotizaciones:', error);
+        throw error;
+      }
+      
+      // Obtener total de registros para paginación
+      const countResponse = await this.makeAuthenticatedRequest(`${this.ODOO_URL}/web/dataset/call_kw`, {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          model: 'sale.order',
+          method: 'search_read',
+          args: [searchFilters],
+          kwargs: {
+            fields: ['id'],
+            order: 'date_order desc',
+            limit: 1000
+          },
+          context: {
+            'uid': user.uid,
+            'tz': 'America/Mexico_City',
+            'lang': 'es_MX'
+          }
+        },
+        id: Math.floor(Math.random() * 1000000),
+      });
+      
+      if (!countResponse.ok) {
+        throw new Error(`HTTP error! status: ${countResponse.status}`);
+      }
+      
+      const countData = await countResponse.json();
+      
+      if (countData.error) {
+        throw new Error(`Odoo error: ${countData.error.message}`);
+      }
+      
+      const totalRecords = countData.result?.length || 0;
+      const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+      
+      console.log(`✅ Cotizaciones obtenidas: ${quotations.length} registros en página ${page} de ${totalPages}`);
+      
+      return {
+        data: quotations,
+        pagination: {
+          page,
+          pageSize,
+          totalRecords,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      };
+      
+    } catch (error) {
+      console.error('❌ Error obteniendo datos de cotizaciones:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener estadísticas de cotizaciones
+   */
+  static async getQuotationStatistics(filters: {
+    dateFrom: string;
+    dateTo: string;
+    state?: 'draft' | 'sent' | 'sale' | 'done' | 'cancel';
+  }) {
+    try {
+      // Obtener todas las cotizaciones sin paginación para estadísticas
+      const result = await this.getQuotationData({
+        ...filters,
+        page: 1,
+        pageSize: 1000
+      });
+      
+      const quotations = result.data || [];
+      
+      // Clasificar cotizaciones por estado
+      const accepted = quotations.filter((q: any) => q.state === 'sale' || q.state === 'done');
+      const rejected = quotations.filter((q: any) => q.state === 'cancel');
+      const pending = quotations.filter((q: any) => 
+        q.state === 'draft' || q.state === 'sent'
+      );
+      
+      // Calcular montos
+      const acceptedAmount = accepted.reduce((sum: number, q: any) => sum + (q.amount_total || 0), 0);
+      const rejectedAmount = rejected.reduce((sum: number, q: any) => sum + (q.amount_total || 0), 0);
+      const pendingAmount = pending.reduce((sum: number, q: any) => sum + (q.amount_total || 0), 0);
+      const totalAmount = quotations.reduce((sum: number, q: any) => sum + (q.amount_total || 0), 0);
+      
+      return {
+        total: quotations.length,
+        accepted: {
+          count: accepted.length,
+          amount: acceptedAmount
+        },
+        rejected: {
+          count: rejected.length,
+          amount: rejectedAmount
+        },
+        pending: {
+          count: pending.length,
+          amount: pendingAmount
+        },
+        totalAmount,
+        quotations
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo estadísticas de cotizaciones:', error);
       throw error;
     }
   }

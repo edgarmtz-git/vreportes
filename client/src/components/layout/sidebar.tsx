@@ -13,7 +13,8 @@ import {
   LogOut,
   X,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,16 +40,22 @@ const navItems = [
     ]
   },
   {
-    title: "Capacitaciones",
-    href: "/capacitaciones",
-    icon: GraduationCap,
-  },
-  {
-    title: "Servicios Industriales",
-    href: "/servicios-industriales",
-    icon: Cog,
+    title: "Cotizaciones",
+    href: "/quotations",
+    icon: FileText,
   },
   // Hidden menus - available for future use
+  // {
+  //   title: "Capacitaciones",
+  //   href: "/capacitaciones",
+  //   icon: GraduationCap,
+  // },
+  // {
+  //   title: "Servicios Industriales",
+  //   href: "/servicios-industriales",
+  //   icon: Cog,
+  // },
+  // Other hidden menus - available for future use
   // {
   //   title: "Profile",
   //   href: "/profile",

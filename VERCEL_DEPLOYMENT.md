@@ -49,16 +49,17 @@ vercel --prod
 En el dashboard de Vercel, agrega estas variables:
 
 ```
-ODOO_URL=https://fexs.mx
-ODOO_DB=Productiva
-DB_HOST=98.80.84.181
+ODOO_URL=https://tu-servidor-odoo.com
+ODOO_DB=nombre_base_datos
+DB_HOST=tu-host-postgresql
 DB_PORT=5432
-DB_NAME=Productiva
-DB_USER=odoo16
-DB_PASSWORD=tu_password_aqui
-TEST_USER=soporte.tecnico@varcus.com.mx
-TEST_PASSWORD=z14K7uN1
+DB_NAME=nombre_base_datos
+DB_USER=usuario_postgresql
+DB_PASSWORD=tu_password_seguro_aqui
+TEST_USER=usuario_prueba@ejemplo.com
+TEST_PASSWORD=password_prueba_seguro
 NODE_ENV=production
+PORT=3001
 ```
 
 ## 🎯 Estructura del Despliegue
@@ -78,7 +79,7 @@ NODE_ENV=production
 # Login
 curl -X POST https://tu-app.vercel.app/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"login":"soporte.tecnico@varcus.com.mx","password":"z14K7uN1"}'
+  -d '{"login":"tu-usuario@ejemplo.com","password":"tu-password"}'
 
 # Logout
 curl -X POST https://tu-app.vercel.app/api/auth/logout \

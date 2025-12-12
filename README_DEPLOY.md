@@ -16,16 +16,17 @@ vercel --prod
 ### 3. Configurar Variables de Entorno
 En el dashboard de Vercel, agrega:
 ```
-ODOO_URL=https://fexs.mx
-ODOO_DB=Productiva
-DB_HOST=98.80.84.181
+ODOO_URL=https://tu-servidor-odoo.com
+ODOO_DB=nombre_base_datos
+DB_HOST=tu-host-postgresql
 DB_PORT=5432
-DB_NAME=Productiva
-DB_USER=odoo16
-DB_PASSWORD=tu_password
-TEST_USER=soporte.tecnico@varcus.com.mx
-TEST_PASSWORD=z14K7uN1
+DB_NAME=nombre_base_datos
+DB_USER=usuario_postgresql
+DB_PASSWORD=tu_password_seguro
+TEST_USER=usuario_prueba@ejemplo.com
+TEST_PASSWORD=password_prueba_seguro
 NODE_ENV=production
+PORT=3001
 ```
 
 ## 🔧 Extensiones Recomendadas para Cursor
@@ -70,8 +71,8 @@ NODE_ENV=production
 
 ### Credenciales de Prueba
 ```
-Usuario: soporte.tecnico@varcus.com.mx
-Contraseña: z14K7uN1
+Usuario: [Configurar en variables de entorno]
+Contraseña: [Configurar en variables de entorno]
 ```
 
 ## 🔍 Verificación Post-Despliegue
@@ -80,7 +81,7 @@ Contraseña: z14K7uN1
 ```bash
 curl -X POST https://tu-app.vercel.app/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"login":"soporte.tecnico@varcus.com.mx","password":"z14K7uN1"}'
+  -d '{"login":"tu-usuario@ejemplo.com","password":"tu-password"}'
 ```
 
 ### 2. Probar Logout

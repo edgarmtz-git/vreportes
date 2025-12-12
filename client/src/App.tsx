@@ -15,6 +15,7 @@ import Dashboard from "@/pages/dashboard";
 import Capacitaciones from "@/pages/capacitaciones";
 import ServiciosIndustriales from "@/pages/servicios-industriales";
 import PaymentReport from "@/pages/payment-report";
+import Quotations from "@/pages/quotations";
 import Profile from "@/pages/profile";
 import Tables from "@/pages/tables";
 import Notifications from "@/pages/notifications";
@@ -91,7 +92,7 @@ function Router() {
       {/* Rutas del dashboard - todas protegidas */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <Layout>
+          <Layout title="Dashboard de Facturación" description="Visualiza el estado de tus facturas y pagos">
             <Dashboard />
           </Layout>
         </ProtectedRoute>
@@ -114,6 +115,13 @@ function Router() {
         <ProtectedRoute>
           <Layout title="Informe de Pagos Diarios" description="Análisis de ingresos diarios con estado de REP para ventas">
             <PaymentReport />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/quotations" element={
+        <ProtectedRoute>
+          <Layout title="Cotizaciones" description="Análisis de cotizaciones: aceptadas, rechazadas y pendientes">
+            <Quotations />
           </Layout>
         </ProtectedRoute>
       } />

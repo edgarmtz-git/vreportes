@@ -41,6 +41,7 @@ interface InvoiceData {
   company_id: [number, string];
   create_date: string;
   write_date: string;
+  methodo_pago?: string | [string, string]; // Campo para método de pago (PUE o PPD) - puede venir como string o tupla [id, nombre]
 }
 
 interface InvoiceStats {
@@ -66,8 +67,11 @@ export default function InvoiceDashboard() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [state, setState] = useState<string>("all");
+  const [metodoPago, setMetodoPago] = useState<string>("all");
+  const [estadoPago, setEstadoPago] = useState<string>("all");
   const [stats, setStats] = useState<InvoiceStats | null>(null);
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
+  const [allInvoices, setAllInvoices] = useState<InvoiceData[]>([]); // Guardar todas las facturas sin filtrar
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingTable, setIsLoadingTable] = useState(false);
@@ -117,8 +121,80 @@ export default function InvoiceDashboard() {
     }
   };
 
+  const getMetodoPagoLabel = (metodoPago?: string | [string, string]): string => {
+    if (!metodoPago) return '-';
+    
+    // Manejar si viene como tupla [id, nombre] desde Odoo
+    let metodoStr = '';
+    if (Array.isArray(metodoPago)) {
+      metodoStr = metodoPago[1] || metodoPago[0] || '';
+    } else {
+      metodoStr = metodoPago;
+    }
+    
+    if (!metodoStr) return '-';
+    
+    // Convertir el valor del campo a PUE o PPD
+    const metodoLower = metodoStr.toLowerCase().trim();
+    
+    // Buscar coincidencias para PUE
+    if (
+      metodoLower.includes('una sola exhibición') || 
+      metodoLower.includes('pue') ||
+      metodoLower === 'pue' ||
+      metodoLower.includes('single payment') ||
+      metodoLower.includes('exhibición única')
+    ) {
+      return 'PUE';
+    }
+    
+    // Buscar coincidencias para PPD
+    if (
+      metodoLower.includes('parcialidades') || 
+      metodoLower.includes('diferido') || 
+      metodoLower.includes('ppd') ||
+      metodoLower === 'ppd' ||
+      metodoLower.includes('partial') ||
+      metodoLower.includes('installments')
+    ) {
+      return 'PPD';
+    }
+    
+    // Si no coincide con ninguno, devolver el valor original truncado
+    return metodoStr.length > 20 ? metodoStr.substring(0, 20) + '...' : metodoStr;
+  };
+
   const isPaid = (invoice: InvoiceData) => {
     return invoice.amount_residual === 0;
+  };
+
+  // Función para aplicar filtros locales
+  const applyFilters = (invoiceList: InvoiceData[]): InvoiceData[] => {
+    let filtered = [...invoiceList];
+
+    // Filtro por método de pago (PUE/PPD)
+    if (metodoPago !== "all") {
+      filtered = filtered.filter(invoice => {
+        const metodo = getMetodoPagoLabel(invoice.methodo_pago);
+        return metodo === metodoPago;
+      });
+    }
+
+    // Filtro por estado de pago (Pagada/Pendiente)
+    if (estadoPago !== "all") {
+      if (estadoPago === "pagada") {
+        filtered = filtered.filter(invoice => isPaid(invoice));
+      } else if (estadoPago === "pendiente") {
+        filtered = filtered.filter(invoice => !isPaid(invoice));
+      }
+    }
+
+    // Filtro por estado de factura (ya se aplica en el backend, pero lo mantenemos por consistencia)
+    if (state !== "all") {
+      filtered = filtered.filter(invoice => invoice.state === state);
+    }
+
+    return filtered;
   };
 
   const fetchInvoiceData = async () => {
@@ -156,15 +232,21 @@ export default function InvoiceDashboard() {
         throw new Error(statsData.message || 'Error al obtener datos');
       }
 
-      const allInvoices = statsData.data || [];
+      const allInvoicesData = statsData.data || [];
       
-      // Calcular estadísticas
-      const totalInvoices = allInvoices.length;
-      const paidInvoices = allInvoices.filter(isPaid).length;
+      // Guardar todas las facturas sin filtrar
+      setAllInvoices(allInvoicesData);
+      
+      // Aplicar filtros locales
+      const filteredInvoices = applyFilters(allInvoicesData);
+      
+      // Calcular estadísticas con facturas filtradas
+      const totalInvoices = filteredInvoices.length;
+      const paidInvoices = filteredInvoices.filter(isPaid).length;
       const unpaidInvoices = totalInvoices - paidInvoices;
       
-      const totalAmount = allInvoices.reduce((sum: number, inv: InvoiceData) => sum + inv.amount_total, 0);
-      const paidAmount = allInvoices.filter(isPaid).reduce((sum: number, inv: InvoiceData) => sum + inv.amount_total, 0);
+      const totalAmount = filteredInvoices.reduce((sum: number, inv: InvoiceData) => sum + inv.amount_total, 0);
+      const paidAmount = filteredInvoices.filter(isPaid).reduce((sum: number, inv: InvoiceData) => sum + inv.amount_total, 0);
       const unpaidAmount = totalAmount - paidAmount;
 
       setStats({
@@ -174,7 +256,7 @@ export default function InvoiceDashboard() {
         totalAmount,
         paidAmount,
         unpaidAmount,
-        invoices: allInvoices
+        invoices: filteredInvoices
       });
 
       // Cargar tabla con paginación
@@ -192,32 +274,60 @@ export default function InvoiceDashboard() {
     setIsLoadingTable(true);
 
     try {
-      const response = await fetch('/api/reports/invoices', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          dateFrom,
-          dateTo,
-          state: state === "all" ? undefined : state || undefined,
-          page,
-          pageSize: size
-        }),
+      // Usar las facturas ya cargadas o cargar desde el servidor
+      let invoicesToFilter = allInvoices.length > 0 ? allInvoices : [];
+      
+      // Si no hay facturas cargadas, obtenerlas del servidor
+      if (invoicesToFilter.length === 0) {
+        const response = await fetch('/api/reports/invoices', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            dateFrom,
+            dateTo,
+            state: state === "all" ? undefined : state || undefined,
+            page: 1,
+            pageSize: 1000 // Obtener todas para aplicar filtros locales
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al obtener datos de tabla');
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.message || 'Error al obtener datos');
+        }
+
+        invoicesToFilter = data.data || [];
+        setAllInvoices(invoicesToFilter);
+      }
+      
+      // Aplicar filtros locales
+      const filteredInvoices = applyFilters(invoicesToFilter);
+      
+      // Aplicar paginación local
+      const startIndex = (page - 1) * size;
+      const endIndex = startIndex + size;
+      const paginatedInvoices = filteredInvoices.slice(startIndex, endIndex);
+      
+      setInvoices(paginatedInvoices);
+      
+      // Calcular paginación basada en resultados filtrados
+      const totalRecords = filteredInvoices.length;
+      const totalPages = Math.max(1, Math.ceil(totalRecords / size));
+      setPagination({
+        page,
+        pageSize: size,
+        totalRecords,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
       });
-
-      if (!response.ok) {
-        throw new Error('Error al obtener datos de tabla');
-      }
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.message || 'Error al obtener datos');
-      }
-
-      setInvoices(data.data || []);
-      setPagination(data.pagination || null);
       setCurrentPage(page);
 
     } catch (error) {
@@ -241,39 +351,33 @@ export default function InvoiceDashboard() {
 
   const handleRefresh = () => {
     if (dateFrom && dateTo) {
+      // Resetear filtros locales al refrescar
+      setMetodoPago("all");
+      setEstadoPago("all");
       fetchInvoiceData();
+    }
+  };
+
+  // Función para aplicar filtros cuando cambian
+  const applyFiltersAndUpdate = () => {
+    if (allInvoices.length > 0) {
+      const filtered = applyFilters(allInvoices);
+      const filteredStats = {
+        totalInvoices: filtered.length,
+        paidInvoices: filtered.filter(isPaid).length,
+        unpaidInvoices: filtered.filter(inv => !isPaid(inv)).length,
+        totalAmount: filtered.reduce((sum, inv) => sum + inv.amount_total, 0),
+        paidAmount: filtered.filter(isPaid).reduce((sum, inv) => sum + inv.amount_total, 0),
+        unpaidAmount: filtered.filter(inv => !isPaid(inv)).reduce((sum, inv) => sum + inv.amount_total, 0),
+        invoices: filtered
+      };
+      setStats(filteredStats);
+      fetchTableData(1, pageSize);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard de Facturación</h1>
-          <p className="text-gray-600 mt-1">
-            Visualiza el estado de tus facturas y pagos
-          </p>
-        </div>
-        <Button
-          onClick={handleRefresh}
-          disabled={isLoading || !dateFrom || !dateTo}
-          variant="outline"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Cargando...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Actualizar
-            </>
-          )}
-        </Button>
-      </div>
-
       {/* Filtros */}
       <Card className="border-gray-200">
         <CardHeader>
@@ -283,7 +387,7 @@ export default function InvoiceDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <div>
               <Label htmlFor="dateFrom">Fecha Desde</Label>
               <Input
@@ -305,8 +409,11 @@ export default function InvoiceDashboard() {
               />
             </div>
             <div>
-              <Label htmlFor="state">Estado</Label>
-              <Select value={state} onValueChange={setState}>
+              <Label htmlFor="state">Estado Factura</Label>
+              <Select value={state} onValueChange={(value) => {
+                setState(value);
+                applyFiltersAndUpdate();
+              }}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
@@ -315,6 +422,38 @@ export default function InvoiceDashboard() {
                   <SelectItem value="draft">Borrador</SelectItem>
                   <SelectItem value="posted">Publicada</SelectItem>
                   <SelectItem value="cancel">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="estadoPago">Estado de Pago</Label>
+              <Select value={estadoPago} onValueChange={(value) => {
+                setEstadoPago(value);
+                applyFiltersAndUpdate();
+              }}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="pagada">Pagada</SelectItem>
+                  <SelectItem value="pendiente">Pendiente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="metodoPago">Método de Pago</Label>
+              <Select value={metodoPago} onValueChange={(value) => {
+                setMetodoPago(value);
+                applyFiltersAndUpdate();
+              }}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="PUE">PUE - Pago en una sola exhibición</SelectItem>
+                  <SelectItem value="PPD">PPD - Pago en parcialidades</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -522,6 +661,7 @@ export default function InvoiceDashboard() {
                         <TableHead>Pendiente</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead>Estado Pago</TableHead>
+                        <TableHead>Método Pago</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -561,6 +701,18 @@ export default function InvoiceDashboard() {
                             <Badge className={isPaid(invoice) ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}>
                               {isPaid(invoice) ? "Pagada" : "Pendiente"}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              const metodoPago = getMetodoPagoLabel(invoice.methodo_pago);
+                              if (metodoPago === 'PUE') {
+                                return <Badge className="bg-purple-100 text-purple-800 border border-purple-300">PUE</Badge>;
+                              } else if (metodoPago === 'PPD') {
+                                return <Badge className="bg-indigo-100 text-indigo-800 border border-indigo-300">PPD</Badge>;
+                              } else {
+                                return <Badge className="bg-gray-100 text-gray-600">{metodoPago}</Badge>;
+                              }
+                            })()}
                           </TableCell>
                         </TableRow>
                       ))}

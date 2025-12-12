@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
+import react from "@vitejs/plugin-react";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -26,8 +26,16 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: ["localhost", "127.0.0.1"],
   };
 
+  const clientRoot = path.resolve(import.meta.dirname, "..", "client");
+
   const vite = await createViteServer({
-    ...viteConfig,
+    root: clientRoot,
+    plugins: [react()],
+    resolve: {
+      alias: {
+        "@": path.resolve(clientRoot, "src"),
+      },
+    },
     configFile: false,
     customLogger: {
       ...viteLogger,
@@ -40,8 +48,22 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
+  // Middleware wrapper para excluir rutas de API de Vite
+  app.use((req, res, next) => {
+    // Skip API routes - they should be handled by Express routes
+    if (req.originalUrl.startsWith("/api")) {
+      return next();
+    }
+    // Dejar que Vite maneje otras rutas
+    return vite.middlewares(req, res, next);
+  });
+
   app.use("*", async (req, res, next) => {
+    // Skip API routes - they should be handled by Express routes
+    if (req.originalUrl.startsWith("/api")) {
+      return next();
+    }
+
     const url = req.originalUrl;
 
     try {

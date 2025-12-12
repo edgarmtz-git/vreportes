@@ -1,24 +1,11 @@
 import { PaymentChart } from '@/components/dashboard/payment-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { TrendingUp, DollarSign, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function PaymentReport() {
   return (
     <div className="h-full overflow-y-auto p-6 custom-scrollbar">
       <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Informe de Pagos Diarios</h1>
-          <p className="text-gray-600 mt-1">
-            Análisis de ingresos diarios con estado de REP para el área de ventas
-          </p>
-        </div>
-        <Badge variant="secondary" className="text-sm">
-          FEXS - Fábrica de Extintores del Sureste
-        </Badge>
-      </div>
 
       {/* Información del informe */}
       <Card className="border-gray-200">

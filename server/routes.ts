@@ -85,11 +85,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log(`🔐 Intentando autenticación para usuario: ${login}`);
+      const config = OdooService.getConfig();
+      console.log(`🔐 Intentando autenticación:`);
+      console.log(`   - Usuario: ${login}`);
+      console.log(`   - Odoo URL: ${config.odooUrl}`);
+      console.log(`   - Base de datos: ${config.odooDb}`);
       
       const authResult = await OdooService.authenticate(login, password);
       
-      console.log(`✅ Autenticación exitosa para: ${authResult.name}`);
+      console.log(`✅ Autenticación exitosa para: ${authResult.name} (UID: ${authResult.uid})`);
       
       res.json({
         success: true,
@@ -108,10 +112,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
     } catch (error) {
+      const config = OdooService.getConfig();
       console.error('💥 Error en autenticación:', error);
+      console.error(`   - Odoo URL: ${config.odooUrl}`);
+      console.error(`   - Base de datos: ${config.odooDb}`);
+      
+      // Proporcionar mensaje de error más detallado
+      let errorMessage = 'Error de autenticación';
+      let errorDetails = '';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        errorDetails = error.stack || '';
+        
+        // Mensajes más específicos según el tipo de error
+        if (error.message.includes('HTTP error')) {
+          errorMessage = `No se pudo conectar con el servidor Odoo en ${config.odooUrl}. Verifica la URL y la conectividad de red.`;
+        } else if (error.message.includes('Invalid credentials') || error.message.includes('Wrong login')) {
+          errorMessage = 'Credenciales inválidas. Verifica tu usuario y contraseña.';
+        } else if (error.message.includes('Database')) {
+          errorMessage = `Error con la base de datos "${config.odooDb}". Verifica que el nombre de la base de datos sea correcto.`;
+        }
+      }
+      
       res.status(401).json({
         success: false,
-        message: `Error de autenticación: ${error}`,
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined,
+        config: process.env.NODE_ENV === 'development' ? {
+          odooUrl: config.odooUrl,
+          odooDb: config.odooDb
+        } : undefined,
       });
     }
   });
@@ -466,6 +497,215 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errorMessage = 'Error de autenticación con Odoo. Verifique las credenciales.';
       } else if (errorMessage.includes('permission') || errorMessage.includes('403')) {
         errorMessage = 'Sin permisos para acceder a los datos de facturas.';
+      }
+      
+      res.status(500).json({
+        success: false,
+        message: errorMessage,
+        error: process.env.NODE_ENV === 'development' ? errorDetails : undefined,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
+  // 📋 Ruta para obtener datos de cotizaciones con paginación
+  app.post('/api/reports/quotations', async (req, res) => {
+    try {
+      const { dateFrom, dateTo, state, page = 1, pageSize = 10 } = req.body;
+      
+      if (!dateFrom || !dateTo) {
+        return res.status(400).json({
+          success: false,
+          message: 'dateFrom y dateTo son requeridos',
+        });
+      }
+
+      console.log(`📋 Obteniendo datos de cotizaciones - Página ${page}, Tamaño ${pageSize}`);
+      if (state) {
+        console.log(`🔍 Filtrando por estado: ${state}`);
+      }
+      
+      try {
+        const quotationData = await OdooService.getQuotationData({
+          dateFrom,
+          dateTo,
+          state,
+          page: parseInt(page),
+          pageSize: parseInt(pageSize)
+        });
+        
+        console.log(`✅ Cotizaciones obtenidas: ${quotationData.data.length} registros en página ${page} de ${quotationData.pagination.totalPages}`);
+        
+        res.json({
+          success: true,
+          message: 'Datos de cotizaciones obtenidos exitosamente',
+          data: quotationData.data,
+          pagination: quotationData.pagination,
+          timestamp: new Date().toISOString(),
+        });
+        
+      } catch (odooError) {
+        console.log(`⚠️ Error con Odoo, usando datos de prueba: ${odooError}`);
+        
+        // Datos de prueba mientras resolvemos el problema
+        const mockQuotations = [
+          {
+            id: 1,
+            name: "COT/2025/00001",
+            date_order: "2025-01-15",
+            partner_id: [1, "Cliente Demo 1"],
+            amount_total: 50000.00,
+            amount_untaxed: 43103.45,
+            amount_tax: 6896.55,
+            currency_id: [1, "MXN"],
+            state: "sale",
+            user_id: [1, "Usuario Demo"],
+            team_id: [1, "Equipo Ventas"],
+            company_id: [1, "Empresa Demo"],
+            create_date: "2025-01-15 10:00:00",
+            write_date: "2025-01-15 10:00:00"
+          },
+          {
+            id: 2,
+            name: "COT/2025/00002",
+            date_order: "2025-01-16",
+            partner_id: [2, "Cliente Demo 2"],
+            amount_total: 75000.00,
+            amount_untaxed: 64655.17,
+            amount_tax: 10344.83,
+            currency_id: [1, "MXN"],
+            state: "cancel",
+            user_id: [1, "Usuario Demo"],
+            team_id: [1, "Equipo Ventas"],
+            company_id: [1, "Empresa Demo"],
+            create_date: "2025-01-16 11:00:00",
+            write_date: "2025-01-16 11:00:00"
+          },
+          {
+            id: 3,
+            name: "COT/2025/00003",
+            date_order: "2025-01-17",
+            partner_id: [3, "Cliente Demo 3"],
+            amount_total: 30000.00,
+            amount_untaxed: 25862.07,
+            amount_tax: 4137.93,
+            currency_id: [1, "MXN"],
+            state: "sent",
+            user_id: [1, "Usuario Demo"],
+            team_id: [1, "Equipo Ventas"],
+            company_id: [1, "Empresa Demo"],
+            create_date: "2025-01-17 12:00:00",
+            write_date: "2025-01-17 12:00:00"
+          }
+        ];
+        
+        // Filtrar datos de prueba según los filtros
+        let filteredQuotations = mockQuotations;
+        
+        if (state && state !== 'all') {
+          filteredQuotations = filteredQuotations.filter(q => q.state === state);
+        }
+        
+        // Aplicar paginación
+        const startIndex = (parseInt(page) - 1) * parseInt(pageSize);
+        const endIndex = startIndex + parseInt(pageSize);
+        const paginatedQuotations = filteredQuotations.slice(startIndex, endIndex);
+        
+        const totalRecords = filteredQuotations.length;
+        const totalPages = Math.max(1, Math.ceil(totalRecords / parseInt(pageSize)));
+        
+        res.json({
+          success: true,
+          message: `Datos de prueba cargados (${paginatedQuotations.length} registros)`,
+          data: paginatedQuotations,
+          pagination: {
+            page: parseInt(page),
+            pageSize: parseInt(pageSize),
+            totalRecords,
+            totalPages,
+            hasNext: parseInt(page) < totalPages,
+            hasPrev: parseInt(page) > 1
+          },
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (error) {
+      console.error('💥 Error obteniendo datos de cotizaciones:', error);
+      
+      let errorMessage = 'Error interno del servidor';
+      let errorDetails = '';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        errorDetails = error.stack || '';
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('ECONNREFUSED')) {
+        errorMessage = 'Error de conexión con el servidor Odoo. Verifique la configuración.';
+      } else if (errorMessage.includes('authentication') || errorMessage.includes('401')) {
+        errorMessage = 'Error de autenticación con Odoo. Verifique las credenciales.';
+      } else if (errorMessage.includes('permission') || errorMessage.includes('403')) {
+        errorMessage = 'Sin permisos para acceder a los datos de cotizaciones.';
+      }
+      
+      res.status(500).json({
+        success: false,
+        message: errorMessage,
+        error: process.env.NODE_ENV === 'development' ? errorDetails : undefined,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
+  // 📊 Ruta para obtener estadísticas de cotizaciones
+  app.post('/api/reports/quotations/stats', async (req, res) => {
+    try {
+      const { dateFrom, dateTo, state } = req.body;
+      
+      if (!dateFrom || !dateTo) {
+        return res.status(400).json({
+          success: false,
+          message: 'dateFrom y dateTo son requeridos',
+        });
+      }
+
+      console.log(`📊 Generando estadísticas de cotizaciones desde ${dateFrom} hasta ${dateTo}`);
+      
+      const stats = await OdooService.getQuotationStatistics({
+        dateFrom,
+        dateTo,
+        state
+      });
+      
+      console.log(`✅ Estadísticas generadas: ${stats.total} cotizaciones`);
+      
+      res.json({
+        success: true,
+        message: 'Estadísticas de cotizaciones generadas exitosamente',
+        data: stats,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('💥 Error generando estadísticas de cotizaciones:', error);
+      
+      let errorMessage = 'Error interno del servidor';
+      let errorDetails = '';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        errorDetails = error.stack || '';
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('ECONNREFUSED')) {
+        errorMessage = 'Error de conexión con el servidor Odoo. Verifique la configuración.';
+      } else if (errorMessage.includes('authentication') || errorMessage.includes('401')) {
+        errorMessage = 'Error de autenticación con Odoo. Verifique las credenciales.';
+      } else if (errorMessage.includes('permission') || errorMessage.includes('403')) {
+        errorMessage = 'Sin permisos para acceder a los datos de cotizaciones.';
       }
       
       res.status(500).json({

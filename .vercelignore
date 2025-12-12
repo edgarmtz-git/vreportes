@@ -1,56 +1,40 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Archivos a ignorar en el despliegue de Vercel
 
-# Build outputs
+# Desarrollo
+node_modules/
+.vscode/
+.idea/
+*.log
+
+# Build local (Vercel hace su propio build)
 dist/
 build/
 
-# Development files
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Git
-.git/
-.gitignore
-
-# Documentation
-README.md
-DEPLOYMENT.md
-CHANGELOG.md
-LICENSE.md
-NEXT_STEPS.md
-replit.md
-
-# Test files
+# Archivos de prueba
 test-*.html
-test-*.js
+test-*.sh
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
 
-# Logs
-logs/
-*.log
+# Documentación de desarrollo
+NEXT_STEPS.md
+VERCEL_CONFIGURATION_QUESTIONS.md
+VERCEL_PROBLEM_ANALYSIS.md
+VERCEL_DEPLOYMENT.md
+README_DEPLOY.md
 
-# Server files
-server/
-api/
-*.ts
-*.js
-!index.html
-!assets/
-!images/
-!favicon.ico
-!clear-sw.js
+# Archivos de configuración local
+.env
+.env.local
+.env.*.local
+
+# Scripts de desarrollo
+check-security.sh
+pre-deploy-check.js
+
+# Archivos temporales
+*.tmp
+*.bak
+*.backup
