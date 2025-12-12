@@ -11,7 +11,6 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "build:client": "cd client && NODE_ENV=production vite build",
-    "build:vercel": "vite build",
     "predeploy": "npm run build:client",
     "deploy": "gh-pages -d dist/public",
     "test:odoo": "curl -X POST http://localhost:8080/api/test-odoo -H 'Content-Type: application/json' | jq"

@@ -101,27 +101,6 @@ La aplicación estará disponible en `http://localhost:3001`
 - ✅ Ejecuta `./check-security.sh` antes de hacer push
 - ✅ Lee [SECURITY.md](./SECURITY.md) para más información
 
-## 🚀 Despliegue en Vercel
-
-### Configuración Rápida
-
-1. **Instalar Vercel CLI**
-```bash
-npm i -g vercel
-```
-
-2. **Login y Desplegar**
-```bash
-vercel login
-vercel --prod
-```
-
-3. **Configurar Variables de Entorno**
-   - Ve al dashboard de Vercel
-   - Agrega las variables de entorno desde `.env`
-   - **NUNCA** uses credenciales de producción en archivos de documentación
-
-Ver [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) para más detalles.
 
 ## 📁 Estructura del Proyecto
 
@@ -138,8 +117,7 @@ vreportes/
 │   │   └── odooService.ts # Servicio de integración con Odoo
 │   ├── routes.ts          # Rutas de la API
 │   └── index.ts           # Punto de entrada del servidor
-├── api/                   # Funciones serverless (Vercel)
-├── vercel.json            # Configuración de Vercel
+├── api/                   # Funciones serverless
 ├── .gitignore            # Archivos ignorados por Git
 └── package.json          # Dependencias y scripts
 ```
