@@ -87,10 +87,10 @@ La aplicación estará disponible en `http://localhost:3001`
 
 ## 📚 Documentación
 
-- [Manual Técnico](./MANUAL_TECNICO.md) - Documentación completa de implementación
-- [Guía de Seguridad](./SECURITY.md) - Políticas y mejores prácticas de seguridad
-- [Guía de Despliegue](./DEPLOYMENT.md) - Instrucciones para desplegar en producción
-- [Checklist Pre-Deploy](./PRE_COMMIT_CHECKLIST.md) - Lista de verificación antes de commit
+- [Manual Técnico](./doc/MANUAL_TECNICO.md) - Documentación completa de implementación
+- [Guía de Seguridad](./doc/SECURITY.md) - Políticas y mejores prácticas de seguridad
+- [Guía de Despliegue](./doc/DEPLOYMENT.md) - Instrucciones para desplegar en producción
+- [Checklist Pre-Deploy](./doc/PRE_COMMIT_CHECKLIST.md) - Lista de verificación antes de commit
 
 ## 🔐 Seguridad
 
@@ -99,7 +99,7 @@ La aplicación estará disponible en `http://localhost:3001`
 - ✅ Usa variables de entorno para todas las credenciales
 - ✅ Revisa `.gitignore` antes de hacer commit
 - ✅ Ejecuta `./check-security.sh` antes de hacer push
-- ✅ Lee [SECURITY.md](./SECURITY.md) para más información
+- ✅ Lee [SECURITY.md](./doc/SECURITY.md) para más información
 
 
 ## 📁 Estructura del Proyecto
@@ -172,7 +172,7 @@ Para problemas o preguntas:
 
 ## 🔄 Changelog
 
-Ver [CHANGELOG.md](./CHANGELOG.md) para historial de cambios.
+Ver [CHANGELOG.md](./doc/CHANGELOG.md) para historial de cambios.
 
 ---
 
